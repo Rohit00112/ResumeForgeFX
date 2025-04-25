@@ -19,14 +19,14 @@ import java.io.IOException;
  */
 @WebServlet(name = "viewResumeServlet", value = "/resume/view")
 public class ViewResumeServlet extends HttpServlet {
-    
+
     private ResumeDAO resumeDAO;
-    
+
     @Override
     public void init() throws ServletException {
         resumeDAO = new ResumeDAOImpl();
     }
-    
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // Check if user is logged in
@@ -36,39 +36,67 @@ public class ViewResumeServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
-        
+
         // Get the logged-in user
         User user = (User) session.getAttribute("user");
-        
+
         // Get the resume ID from the request
         String resumeIdStr = request.getParameter("id");
         if (resumeIdStr == null || resumeIdStr.trim().isEmpty()) {
             response.sendRedirect(request.getContextPath() + "/dashboard");
             return;
         }
-        
+
         try {
             Long resumeId = Long.parseLong(resumeIdStr);
-            
+
             // Get the resume
             Resume resume = resumeDAO.findById(resumeId);
-            
+
             // Check if resume exists and belongs to the logged-in user
             if (resume == null || !resume.getUserId().equals(user.getId())) {
                 response.sendRedirect(request.getContextPath() + "/dashboard");
                 return;
             }
-            
+
             // Get the template parameter (default to "classic" if not specified)
             String template = request.getParameter("template");
             if (template == null || template.trim().isEmpty()) {
                 template = "classic";
             }
-            
+
+            // Get customization parameters
+            String primaryColor = request.getParameter("primaryColor");
+            String secondaryColor = request.getParameter("secondaryColor");
+            String accentColor = request.getParameter("accentColor");
+            String fontFamily = request.getParameter("fontFamily");
+            String fontSize = request.getParameter("fontSize");
+
             // Set resume and template as request attributes
             request.setAttribute("resume", resume);
             request.setAttribute("template", template);
-            
+
+            // Set customization attributes if provided
+            if (primaryColor != null && !primaryColor.trim().isEmpty()) {
+                request.setAttribute("primaryColor", primaryColor);
+            }
+
+            if (secondaryColor != null && !secondaryColor.trim().isEmpty()) {
+                request.setAttribute("secondaryColor", secondaryColor);
+            }
+
+            if (accentColor != null && !accentColor.trim().isEmpty()) {
+                request.setAttribute("accentColor", accentColor);
+            }
+
+            if (fontFamily != null && !fontFamily.trim().isEmpty()) {
+                request.setAttribute("fontFamily", fontFamily);
+            }
+
+            if (fontSize != null && !fontSize.trim().isEmpty()) {
+                request.setAttribute("fontSize", fontSize);
+            }
+
             // Forward to the resume view page
             request.getRequestDispatcher("/WEB-INF/views/resume/view.jsp").forward(request, response);
         } catch (NumberFormatException e) {
