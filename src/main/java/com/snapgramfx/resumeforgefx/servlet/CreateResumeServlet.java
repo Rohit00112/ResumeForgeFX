@@ -14,23 +14,22 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
  * Servlet for handling resume creation.
  */
 @WebServlet(name = "createResumeServlet", value = "/resume/create")
 public class CreateResumeServlet extends HttpServlet {
-    
+
     private ResumeDAO resumeDAO;
     private SimpleDateFormat dateFormat;
-    
+
     @Override
     public void init() throws ServletException {
         resumeDAO = new ResumeDAOImpl();
         dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     }
-    
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // Check if user is logged in
@@ -40,11 +39,11 @@ public class CreateResumeServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
-        
+
         // Forward to the resume creation page
         request.getRequestDispatcher("/WEB-INF/views/resume/create.jsp").forward(request, response);
     }
-    
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // Check if user is logged in
@@ -54,17 +53,17 @@ public class CreateResumeServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
-        
+
         // Get the logged-in user
         User user = (User) session.getAttribute("user");
-        
+
         try {
             // Create a new resume
             Resume resume = createResumeFromRequest(request, user.getId());
-            
+
             // Save the resume
             Resume savedResume = resumeDAO.save(resume);
-            
+
             if (savedResume != null) {
                 // Redirect to the resume edit page
                 response.sendRedirect(request.getContextPath() + "/resume/edit?id=" + savedResume.getId());
@@ -79,10 +78,10 @@ public class CreateResumeServlet extends HttpServlet {
             request.getRequestDispatcher("/WEB-INF/views/resume/create.jsp").forward(request, response);
         }
     }
-    
+
     /**
      * Create a Resume object from the request parameters.
-     * 
+     *
      * @param request the HttpServletRequest
      * @param userId the ID of the user creating the resume
      * @return a Resume object
@@ -92,10 +91,10 @@ public class CreateResumeServlet extends HttpServlet {
         // Get basic resume information
         String title = request.getParameter("title");
         String summary = request.getParameter("summary");
-        
+
         // Create a new resume
         Resume resume = new Resume(userId, title, summary);
-        
+
         // Create contact information
         String email = request.getParameter("email");
         String phone = request.getParameter("phone");
@@ -106,7 +105,7 @@ public class CreateResumeServlet extends HttpServlet {
         String country = request.getParameter("country");
         String linkedin = request.getParameter("linkedin");
         String website = request.getParameter("website");
-        
+
         ContactInfo contactInfo = new ContactInfo(email, phone);
         contactInfo.setAddress(address);
         contactInfo.setCity(city);
@@ -115,9 +114,9 @@ public class CreateResumeServlet extends HttpServlet {
         contactInfo.setCountry(country);
         contactInfo.setLinkedIn(linkedin);
         contactInfo.setWebsite(website);
-        
+
         resume.setContactInfo(contactInfo);
-        
+
         // Process education entries
         String[] institutions = request.getParameterValues("institution");
         String[] degrees = request.getParameterValues("degree");
@@ -126,7 +125,7 @@ public class CreateResumeServlet extends HttpServlet {
         String[] eduEndDates = request.getParameterValues("eduEndDate");
         String[] eduDescriptions = request.getParameterValues("eduDescription");
         String[] eduCurrentFlags = request.getParameterValues("eduCurrent");
-        
+
         if (institutions != null) {
             for (int i = 0; i < institutions.length; i++) {
                 if (institutions[i] != null && !institutions[i].trim().isEmpty()) {
@@ -134,31 +133,31 @@ public class CreateResumeServlet extends HttpServlet {
                     education.setInstitution(institutions[i]);
                     education.setDegree(degrees[i]);
                     education.setFieldOfStudy(fieldsOfStudy[i]);
-                    
+
                     // Parse dates
                     if (eduStartDates[i] != null && !eduStartDates[i].isEmpty()) {
                         education.setStartDate(dateFormat.parse(eduStartDates[i]));
                     }
-                    
+
                     // Check if current education
-                    boolean isCurrent = eduCurrentFlags != null && 
-                                       i < eduCurrentFlags.length && 
-                                       eduCurrentFlags[i] != null && 
+                    boolean isCurrent = eduCurrentFlags != null &&
+                                       i < eduCurrentFlags.length &&
+                                       eduCurrentFlags[i] != null &&
                                        eduCurrentFlags[i].equals("on");
-                    
+
                     education.setCurrent(isCurrent);
-                    
+
                     if (!isCurrent && eduEndDates[i] != null && !eduEndDates[i].isEmpty()) {
                         education.setEndDate(dateFormat.parse(eduEndDates[i]));
                     }
-                    
+
                     education.setDescription(eduDescriptions[i]);
-                    
+
                     resume.addEducation(education);
                 }
             }
         }
-        
+
         // Process experience entries
         String[] companies = request.getParameterValues("company");
         String[] positions = request.getParameterValues("position");
@@ -167,7 +166,7 @@ public class CreateResumeServlet extends HttpServlet {
         String[] expEndDates = request.getParameterValues("expEndDate");
         String[] expDescriptions = request.getParameterValues("expDescription");
         String[] expCurrentFlags = request.getParameterValues("expCurrent");
-        
+
         if (companies != null) {
             for (int i = 0; i < companies.length; i++) {
                 if (companies[i] != null && !companies[i].trim().isEmpty()) {
@@ -175,35 +174,35 @@ public class CreateResumeServlet extends HttpServlet {
                     experience.setCompany(companies[i]);
                     experience.setPosition(positions[i]);
                     experience.setLocation(locations[i]);
-                    
+
                     // Parse dates
                     if (expStartDates[i] != null && !expStartDates[i].isEmpty()) {
                         experience.setStartDate(dateFormat.parse(expStartDates[i]));
                     }
-                    
+
                     // Check if current job
-                    boolean isCurrent = expCurrentFlags != null && 
-                                       i < expCurrentFlags.length && 
-                                       expCurrentFlags[i] != null && 
+                    boolean isCurrent = expCurrentFlags != null &&
+                                       i < expCurrentFlags.length &&
+                                       expCurrentFlags[i] != null &&
                                        expCurrentFlags[i].equals("on");
-                    
+
                     experience.setCurrent(isCurrent);
-                    
+
                     if (!isCurrent && expEndDates[i] != null && !expEndDates[i].isEmpty()) {
                         experience.setEndDate(dateFormat.parse(expEndDates[i]));
                     }
-                    
+
                     experience.setDescription(expDescriptions[i]);
-                    
+
                     resume.addExperience(experience);
                 }
             }
         }
-        
+
         // Process skills
         String[] skillNames = request.getParameterValues("skillName");
         String[] skillLevels = request.getParameterValues("skillLevel");
-        
+
         if (skillNames != null) {
             for (int i = 0; i < skillNames.length; i++) {
                 if (skillNames[i] != null && !skillNames[i].trim().isEmpty()) {
@@ -215,13 +214,13 @@ public class CreateResumeServlet extends HttpServlet {
                             // Use default level if parsing fails
                         }
                     }
-                    
+
                     Skill skill = new Skill(skillNames[i], level);
                     resume.addSkill(skill);
                 }
             }
         }
-        
+
         return resume;
     }
 }
